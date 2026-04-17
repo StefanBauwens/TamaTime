@@ -50,7 +50,7 @@ var xhrRequest = function (url, type, data, callback, errorCallback, timeout = 1
   }
 };
 
-function SendSaveStateToWatch() // Send last save state back to watch
+function FetchScreenInfoAndSendToWatch() // Send last save state back to watch
 {
     if(localStorage.getItem(APISERVER_KEY) !== null && localStorage.getItem(APISERVER_KEY).trim().length !== 0)
     {
@@ -115,6 +115,10 @@ Pebble.addEventListener('appmessage', function(e) {
     var dict = e.payload;
     console.log("Got message: " + JSON.stringify(dict));
 
+    if ('RequestState' in dict)
+    {
+      FetchScreenInfoAndSendToWatch();
+    }
     /*if ('STATEpc' in dict)
     {
         SaveStateAfterClosingApp(dict);

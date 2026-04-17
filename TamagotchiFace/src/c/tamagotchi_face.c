@@ -1,3 +1,16 @@
+//TODO
+// make time work with seconds and minutes
+// make config for using seconds or not
+// handle 05:00 (should not show the first 0)
+// handle the empty and full arrows
+// handle am and pm (make it work correctly)
+// handle NOT using am and pm (24 hour format)
+// handle frequency we should poll server (once a minute?) -> maybe don't config it? -> js check periodically and if attention icon is set just send it only then
+// handle buzzing on attention icon set -> show for 5 minutes? well actually if the attention icon is showing it will show every minute until its gone?
+// do NOT buzz every time if the attention icon is still showing, but good to keep pushing screen as there might be multiple things needing attention?
+// handle error handling -> only when server doesn't work? -> clear screen nicely? 
+
+
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 
 #define VRAM_SIZE (64 + 13)
@@ -10,12 +23,233 @@
 
 #include <pebble.h>
 
+static void requestStateFromServer();
+
 static Window *s_main_window;
 static BitmapLayer *s_background_layer;
 static Layer *s_screen_layer;
 static Layer *s_icons_layer;
 static TextLayer *s_text_layer; //TODO use as temp show the time? DO NOT use fonts for tellling time since pixels change depending on platform
 //static GFont s_lcd_font;
+
+// Pixel Font
+const uint8_t big_0[] = {
+  0b0110,
+  0b1001,
+  0b1001,
+  0b1001,
+  0b1001,
+  0b1001,
+  0b0110
+};
+
+const uint8_t big_1[] = {
+  0b0001,
+  0b0011,
+  0b0001,
+  0b0001,
+  0b0001,
+  0b0001,
+  0b0001
+};
+
+const uint8_t big_2[] = {
+  0b0110,
+  0b1001,
+  0b0001,
+  0b0010,
+  0b0100,
+  0b1000,
+  0b1111
+};
+
+const uint8_t big_3[] = {
+  0b1110,
+  0b0001,
+  0b0001,
+  0b0110,
+  0b0001,
+  0b0001,
+  0b1110
+};
+
+const uint8_t big_4[] = {
+  0b0010,
+  0b0110,
+  0b1010,
+  0b1010,
+  0b1010,
+  0b1111,
+  0b0010
+};
+
+const uint8_t big_5[] = {
+  0b1111,
+  0b1000,
+  0b1000,
+  0b1110,
+  0b0001,
+  0b0001,
+  0b1110
+};
+
+const uint8_t big_6[] = {
+  0b0110,
+  0b1001,
+  0b1000,
+  0b1110,
+  0b1001,
+  0b1001,
+  0b0110
+};
+
+const uint8_t big_7[] = {
+  0b1111,
+  0b1001,
+  0b1001,
+  0b0001,
+  0b0010,
+  0b0010,
+  0b0010
+};
+
+const uint8_t big_8[] = {
+  0b0110,
+  0b1001,
+  0b1001,
+  0b0110,
+  0b1001,
+  0b1001,
+  0b0110
+};
+
+const uint8_t big_9[] = {
+  0b0110,
+  0b1001,
+  0b1001,
+  0b0111,
+  0b0001,
+  0b0001,
+  0b0110
+};
+
+const uint8_t small_0[] = {
+  0b111,
+  0b101,
+  0b101,
+  0b101,
+  0b111,
+};
+
+const uint8_t small_1[] = {
+  0b001,
+  0b001,
+  0b001,
+  0b001,
+  0b001,
+};
+
+const uint8_t small_2[] = {
+  0b111,
+  0b001,
+  0b111,
+  0b100,
+  0b111,
+};
+
+const uint8_t small_3[] = { 
+  0b111,
+  0b001,
+  0b111,
+  0b001,
+  0b111,
+};
+
+const uint8_t small_4[] = {
+  0b101,
+  0b101,
+  0b111,
+  0b001,
+  0b001,
+};
+
+const uint8_t small_5[] = {
+  0b111,
+  0b100,
+  0b111,
+  0b001,
+  0b111,
+};
+
+const uint8_t small_6[] = {
+  0b111,
+  0b100,
+  0b111,
+  0b101,
+  0b111,
+};
+
+const uint8_t small_7[] = {
+  0b111,
+  0b101,
+  0b001,
+  0b001,
+  0b001,
+};
+
+const uint8_t small_8[] = {
+  0b111,
+  0b101,
+  0b111,
+  0b101,
+  0b111,
+};
+
+const uint8_t small_9[] = {
+  0b111,
+  0b101,
+  0b111,
+  0b001,
+  0b111,
+};
+
+const uint8_t arrow_empty[] = {
+  0b100,
+  0b010,
+  0b001,
+  0b010,
+  0b100,
+};
+
+const uint8_t arrow_full[] = {
+  0b100,
+  0b110,
+  0b111,
+  0b110,
+  0b100,
+};
+
+const uint8_t am[] = {
+  0b011110,
+  0b100011,
+  0b111111,
+  0b100011,
+  0b000000,
+  0b110111,
+  0b101011,
+  0b101011,
+};
+
+const uint8_t pm[] = {
+  0b111110,
+  0b110001,
+  0b111110,
+  0b110000,
+  0b000000,
+  0b110111,
+  0b101011,
+  0b101011,
+};
 
 // Bitmaps
 static GBitmap *s_bitmap_bg;
@@ -105,6 +339,7 @@ void set_screen_to_last_state(uint8_t *fullRam) { // gets screen data from memor
 // Button presses
 /*static void on_button_back(ClickRecognizerRef recognizer, void *context) //back
 {
+  requestStateFromServer();
 }*/
 
 static void click_config_provider(void *context) { //TODO use a button to click to see the time or change view? though can be annoying
@@ -208,6 +443,8 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   if(ready_tuple_t && !s_js_ready) {
     // PebbleKit JS is ready! Safe to send messages
     s_js_ready = true;
+
+    requestStateFromServer();
     //Message("Loading ROM 0%");
   }
 
@@ -324,7 +561,7 @@ static void main_window_load(Window *window) {
   s_text_layer = text_layer_create(GRect(6, 60, 128, 50)); 
   #endif
   text_layer_set_background_color(s_text_layer, GColorClear);
-  Message("Fake:time:seconds");
+  //Message("Fake:time:seconds");
   text_layer_set_text_alignment(s_text_layer, GTextAlignmentCenter);
   text_layer_set_overflow_mode(s_text_layer, GTextOverflowModeWordWrap);
   layer_add_child(window_layer, text_layer_get_layer(s_text_layer));
