@@ -1,0 +1,262 @@
+{
+    "author": "Stefan Bauwens",
+    "dependencies": {
+        "@rebble/clay": "^1.0.8"
+    },
+    "keywords": [
+        "pebble",
+        "watchface",
+        "tamagotchi",
+        "pet"
+    ],
+    "name": "Tamagotchi Face",
+    "pebble": {
+        "displayName": "Tamagotchi Face",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "Button",
+            "JSReady",
+            "STATEmemory",
+            "STATEnone",
+            "STATEselected_icon",
+            "STATEshowing_attention_icon",
+            "APIServerUrl",
+            "JSMessage",
+            "RequestState"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "menuIcon": true,
+                    "type": "bitmap",
+                    "name": "APP_ICON",
+                    "file": "images/app_icon.png"
+                },
+                {
+                    "file": "images/bgBasalt.png",
+                    "name": "BG_IMAGE",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "basalt"
+                    ]
+                },
+                {
+                    "file": "images/bgGabbro.png",
+                    "name": "BG_IMAGE",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/bgEmery.png",
+                    "name": "BG_IMAGE",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery"
+                    ]
+                },
+                {
+                    "file": "images/bgChalk.png",
+                    "name": "BG_IMAGE",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "chalk"
+                    ]
+                },
+                {
+                    "file": "images/bgNoColor.png",
+                    "name": "BG_IMAGE_BW",
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/1.png",
+                    "name": "ICON1",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ]
+                },
+                {
+                    "file": "images/2.png",
+                    "name": "ICON2",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ]
+                },
+                {
+                    "file": "images/3.png",
+                    "name": "ICON3",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ]
+                },
+                {
+                    "file": "images/4.png",
+                    "name": "ICON4",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ]
+                },
+                {
+                    "file": "images/5.png",
+                    "name": "ICON5",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ]
+                },
+                {
+                    "file": "images/6.png",
+                    "name": "ICON6",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ]
+                },
+                {
+                    "file": "images/7.png",
+                    "name": "ICON7",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ]
+                },
+                {
+                    "file": "images/8.png",
+                    "name": "ICON8",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "chalk",
+                        "diorite",
+                        "flint"
+                    ]
+                },
+                {
+                    "file": "images/1_eg.png",
+                    "name": "ICON1",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/2_eg.png",
+                    "name": "ICON2",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/3_eg.png",
+                    "name": "ICON3",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/4_eg.png",
+                    "name": "ICON4",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/5_eg.png",
+                    "name": "ICON5",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/6_eg.png",
+                    "name": "ICON6",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/7_eg.png",
+                    "name": "ICON7",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/8_eg.png",
+                    "name": "ICON8",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery",
+                        "gabbro"
+                    ]
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk",
+            "diorite",
+            "flint",
+            "emery",
+            "gabbro"
+        ],
+        "uuid": "31b51f52-c45a-441f-a8f5-edd9bb0b8ab7",
+        "watchapp": {
+            "watchface": true
+        },
+        "capabilities": [
+            "configurable"
+        ]
+    },
+    "version": "1.0.0"
+}
