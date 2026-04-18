@@ -1,5 +1,4 @@
 //TODO
-// handle frequency we should poll server (once a minute?) -> maybe don't config it? -> js check periodically and if attention icon is set just send it only then
 // handle buzzing on attention icon set -> show for 5 minutes? well actually if the attention icon is showing it will show every minute until its gone?
 // do NOT buzz every time if the attention icon is still showing, but good to keep pushing screen as there might be multiple things needing attention?
 // handle error handling -> only when server doesn't work? -> clear screen nicely? 
@@ -12,6 +11,7 @@
 // update every minute? check for attention? i guess once a minute app message isn't very harmful to battery
 // Tamatime/ Tamaception
 // set interval js side, only do if server url is set and not empty TODO change this!
+// error handling
 
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)

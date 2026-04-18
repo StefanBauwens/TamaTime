@@ -1,11 +1,11 @@
 module.exports = [
   { 
     "type": "heading", 
-    "defaultValue": "Tamagotchi Helper Face" 
+    "defaultValue": "TamaTime" 
   }, 
   { 
     "type": "text", 
-    "defaultValue": "Created by Stefan Bauwens as a companion watchface to the Tamagotchi Emulator 4 Pebble watchapp." 
+    "defaultValue": "Created by Stefan Bauwens as a companion watchface to the <a href='https://apps.repebble.com/tamagotchi-emulator_216a0f62c6e44aac8f725e68'>Tamagotchi Emulator 4 Pebble watchapp.</a>" 
   },
   { 
     "type": "text", 
