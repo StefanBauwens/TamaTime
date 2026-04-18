@@ -10,7 +10,7 @@ var Clay = require('@rebble/clay');
 // Load our Clay configuration file
 var clayConfig = require('./config');
 // Initialize Clay
-var clay = new Clay(clayConfig, null, {autoHandleEvents: false});
+var clay = new Clay(clayConfig, null, {autoHandleEvents: true});
 
 var xhrRequest = function (url, type, data, callback, errorCallback, timeout = 10000) {
   var xhr = new XMLHttpRequest();
@@ -124,6 +124,7 @@ Pebble.addEventListener('appmessage', function(e) {
     }*/
   });
 
+/*
 // We need to implement this since we are overriding events in webviewclosed
 Pebble.addEventListener('showConfiguration', 
     function(e) {
@@ -142,3 +143,4 @@ Pebble.addEventListener('webviewclosed',
         localStorage.setItem(APISERVER_KEY, dict[messageKeys.APIServerUrl]);
     }
 );
+*/

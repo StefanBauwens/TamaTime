@@ -35,6 +35,8 @@
 const int USE_SECONDS_KEY = 32;
 
 static void requestStateFromServer();
+static void update_time(bool (*screen)[LCD_WIDTH]);
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
 
 static Window *s_main_window;
 static BitmapLayer *s_background_layer;
@@ -42,7 +44,7 @@ static Layer *s_screen_layer; //TODO make another layer for small screen!!
 static Layer *s_icons_layer;
 static TextLayer *s_text_layer; //TODO use as temp show the time? DO NOT use fonts for tellling time since pixels change depending on platform
 //static GFont s_lcd_font;
-static TimeUnits time_units;
+static TimeUnits time_units; // use seconds or not
 
 // Pixel Font
 const uint8_t big_0[] = {
@@ -419,8 +421,24 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     // PebbleKit JS is ready! Safe to send messages
     s_js_ready = true;
 
-    requestStateFromServer();
-    //Message("Loading ROM 0%");
+    //requestStateFromServer(); //TODO use elsewhere
+  }
+
+  Tuple *UseSeconds_t = dict_find(iter, MESSAGE_KEY_UseSeconds);
+  if (UseSeconds_t)
+  {
+    bool useSeconds = UseSeconds_t->value->int8; //TODO test
+    persist_write_bool(USE_SECONDS_KEY, useSeconds);
+
+    time_units = useSeconds ? SECOND_UNIT : MINUTE_UNIT;
+    // unsubscribe so we don't keep doing seconds
+    tick_timer_service_unsubscribe();
+
+    // Make sure the time is displayed from the start
+    update_time(s_screen_buffer); //TODO determine which screen
+
+    // Register with TickTimerService
+    tick_timer_service_subscribe(time_units, tick_handler); 
   }
 
   // Handle (error) messages //TODO probably wanna remove?
@@ -541,7 +559,7 @@ static void update_time(bool (*screen)[LCD_WIDTH])
   else
   {
     hour = tick_time->tm_hour;
-    if hour >= 12)
+    if (hour >= 12)
     {
       // show pm
       DrawBitmap(screen, pm, 6, 8, 3, 8);
@@ -576,18 +594,39 @@ static void update_time(bool (*screen)[LCD_WIDTH])
   DrawBigDigit(screen, minute1, 14, 0);
   // 2nd digit minute
   DrawBigDigit(screen, minute - (minute1 * 10), 19, 0);
-  // 1st digit second //TODO only show seconds if doing seconds
-  int second1 = 0;
-  if (second >= 10)
-  {
-    second1 = second/10;
-  }
-  DrawSmallDigit(screen, second1, 25, 2);
-  // 2nd digit second
-  DrawSmallDigit(screen, second - (second1 * 10), 29, 2);
 
-  // arrows
-  DrawArrows(screen, second); // handle if drawing seconds
+  if (time_units == SECOND_UNIT)
+  {
+    // 1st digit second
+    int second1 = 0;
+    if (second >= 10)
+    {
+      second1 = second/10;
+    }
+    DrawSmallDigit(screen, second1, 25, 2);
+    // 2nd digit second
+    DrawSmallDigit(screen, second - (second1 * 10), 29, 2);
+
+    // arrows
+    DrawArrows(screen, second); // handle if drawing seconds
+  }
+  else
+  {
+    // show arrows instead of seconds to fill blank
+    DrawBitmap(screen, arrow_empty, 3, 5, 25, 2);
+    DrawBitmap(screen, arrow_empty, 3, 5, 29, 2);
+
+
+    // arrows
+    if (minute % 2 == 0) // show empty arrows on even minutes
+    {
+      DrawArrows(screen, 0);
+    }
+    else // show full arrows on uneven minutes
+    {
+      DrawArrows(screen, 5);
+    }
+  }
 
   //TODO add if staztement if time on big screen and mark relevant layer dirty
   layer_mark_dirty(s_screen_layer); //Tell the system to redraw screen
@@ -730,7 +769,12 @@ static void init() {
   // Listen for button events
   window_set_click_config_provider(s_main_window, click_config_provider);
 
-  time_units = SECOND_UNIT; //TODO check persistant storage for value
+  bool useSeconds = true;
+  if (persist_exists(USE_SECONDS_KEY))
+  {
+    useSeconds = persist_read_bool(USE_SECONDS_KEY);
+  }
+  time_units = useSeconds ? SECOND_UNIT : MINUTE_UNIT;
 
   // Make sure the time is displayed from the start
   update_time(s_screen_buffer); //TODO determine which screen
