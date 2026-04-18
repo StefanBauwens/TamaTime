@@ -71,7 +71,6 @@ function FetchScreenInfoAndSendToWatch() // Send last save state back to watch
 
             let parsedDict = {
                 'STATEmemory': serverState.memory,
-                'STATEselected_icon': serverState.selected_icon,
                 'STATEshowing_attention_icon': serverState.showing_attention_icon
             };
 

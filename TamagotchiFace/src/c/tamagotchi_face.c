@@ -9,6 +9,15 @@
 // handle buzzing on attention icon set -> show for 5 minutes? well actually if the attention icon is showing it will show every minute until its gone?
 // do NOT buzz every time if the attention icon is still showing, but good to keep pushing screen as there might be multiple things needing attention?
 // handle error handling -> only when server doesn't work? -> clear screen nicely? 
+// write simple readme, Te4p needs to run first before any valid state to fetch from server
+// publish to store
+// make reddit post with screenshots and more explanation of emulator as well.
+// Link to original pebble app in configuration?
+// Make small version and option to flip displays
+// ignore regular icons, no need to show that
+// server url should be optional (hide small screen)
+// update every minute? check for attention? i guess once a minute app message isn't very harmful to battery
+// Tamatime/ Tamaception
 
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
@@ -31,6 +40,7 @@ static Layer *s_screen_layer;
 static Layer *s_icons_layer;
 static TextLayer *s_text_layer; //TODO use as temp show the time? DO NOT use fonts for tellling time since pixels change depending on platform
 //static GFont s_lcd_font;
+static TimeUnits time_units;
 
 // Pixel Font
 const uint8_t big_0[] = {
@@ -253,17 +263,9 @@ const uint8_t pm[] = {
 
 // Bitmaps
 static GBitmap *s_bitmap_bg;
-static GBitmap *s_bitmap_icon1;
-static GBitmap *s_bitmap_icon2;
-static GBitmap *s_bitmap_icon3;
-static GBitmap *s_bitmap_icon4;
-static GBitmap *s_bitmap_icon5;
-static GBitmap *s_bitmap_icon6;
-static GBitmap *s_bitmap_icon7;
 static GBitmap *s_bitmap_icon8;
 
 uint8_t memory[MEM_BUFFER_SIZE];
-static int8_t s_selectedIcon = -1; // -1 is none, 0-6 says what icon
 static bool s_showingAttentionIcon = false;
 static bool s_js_ready;
 static bool s_pixelsChanged = false;
@@ -355,53 +357,6 @@ static void icons_update_proc(Layer *layer, GContext *ctx) {
   // Set the compositing mode (GCompOpSet is required for transparency)
   graphics_context_set_compositing_mode(ctx, GCompOpSet);
 
-  if(s_selectedIcon >= 0)
-  {
-    #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
-    uint8_t xPos = 12 + ((s_selectedIcon%4) * 40); 
-    uint8_t yPos = (s_selectedIcon > 3 ? 120 : 0);
-    #else
-    uint8_t xPos = 12 + ((s_selectedIcon%4) * 32);
-    uint8_t yPos = (s_selectedIcon > 3 ? 100 : 0);
-    #endif
-
-    GBitmap* selected_icon = s_bitmap_icon7;
-    switch(s_selectedIcon)
-    {
-      case 0:
-        selected_icon = s_bitmap_icon1;
-        break;
-      case 1:
-        selected_icon = s_bitmap_icon2;
-        break;
-      case 2:
-        selected_icon = s_bitmap_icon3;
-        break;
-      case 3:
-        selected_icon = s_bitmap_icon4;
-        break;
-      case 4:
-        selected_icon = s_bitmap_icon5;
-        break;
-      case 5:
-        selected_icon = s_bitmap_icon6;
-        break;
-      case 6:
-        selected_icon = s_bitmap_icon7;
-        break;
-      default:
-        selected_icon = s_bitmap_icon7;
-        break;
-    }
-
-    // Draw selected icon if selected
-    #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
-    graphics_draw_bitmap_in_rect(ctx, selected_icon, GRect(xPos, yPos, 27, 22));
-    #else
-    graphics_draw_bitmap_in_rect(ctx, selected_icon, GRect(xPos, yPos, 22, 18));
-    #endif
-  }
-
   // Handle attention icon
   if(s_showingAttentionIcon)
   {
@@ -459,10 +414,10 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   // Handle incoming save state
   Tuple *STATEnone_t = dict_find(iter, MESSAGE_KEY_STATEnone); //TODO do we need?
   Tuple *STATEmemory_t = dict_find(iter, MESSAGE_KEY_STATEmemory);
-  Tuple *STATEselected_icon_t = dict_find(iter, MESSAGE_KEY_STATEselected_icon);
+  //Tuple *STATEselected_icon_t = dict_find(iter, MESSAGE_KEY_STATEselected_icon);
   Tuple *STATEshowing_attention_icon_t = dict_find(iter, MESSAGE_KEY_STATEshowing_attention_icon);
 
-  if (STATEmemory_t && STATEselected_icon_t && STATEshowing_attention_icon_t)
+  if (STATEmemory_t && STATEshowing_attention_icon_t)
   {
     //Message("Loading save state...");
     // handle screen
@@ -473,11 +428,32 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     layer_mark_dirty(s_screen_layer); //Tell the system to redraw screen
 
     //handle icons
-    s_selectedIcon = STATEselected_icon_t->value->int8;
+    //s_selectedIcon = STATEselected_icon_t->value->int8;
     s_showingAttentionIcon = STATEshowing_attention_icon_t->value->int8;
 
     layer_mark_dirty(s_icons_layer);
   }
+}
+
+static void update_time()
+{
+  //TODO
+
+  // Get a tm structure
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+
+  // Write the current hours and minutes into a buffer
+  static char s_time_buffer[8];
+  strftime(s_time_buffer, sizeof(s_time_buffer), clock_is_24h_style() ?
+                                                    "%H:%M" : "%I:%M", tick_time);
+
+  // Display this time on the TextLayer
+  //text_layer_set_text(s_time_layer, s_time_buffer);
+}
+
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  update_time();
 }
 
 static void main_window_load(Window *window) {
@@ -508,13 +484,6 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, bitmap_layer_get_layer(s_background_layer));
 
   // Create bitmaps for icons
-  s_bitmap_icon1 = gbitmap_create_with_resource(RESOURCE_ID_ICON1);
-  s_bitmap_icon2 = gbitmap_create_with_resource(RESOURCE_ID_ICON2);
-  s_bitmap_icon3 = gbitmap_create_with_resource(RESOURCE_ID_ICON3);
-  s_bitmap_icon4 = gbitmap_create_with_resource(RESOURCE_ID_ICON4);
-  s_bitmap_icon5 = gbitmap_create_with_resource(RESOURCE_ID_ICON5);
-  s_bitmap_icon6 = gbitmap_create_with_resource(RESOURCE_ID_ICON6);
-  s_bitmap_icon7 = gbitmap_create_with_resource(RESOURCE_ID_ICON7);
   s_bitmap_icon8 = gbitmap_create_with_resource(RESOURCE_ID_ICON8);
 
   // Create icons layer
@@ -579,13 +548,6 @@ static void main_window_unload(Window *window) {
   //fonts_unload_custom_font(s_lcd_font);
 
   // Destroy icon bitmaps
-  gbitmap_destroy(s_bitmap_icon1);
-  gbitmap_destroy(s_bitmap_icon2);
-  gbitmap_destroy(s_bitmap_icon3);
-  gbitmap_destroy(s_bitmap_icon4);
-  gbitmap_destroy(s_bitmap_icon5);
-  gbitmap_destroy(s_bitmap_icon6);
-  gbitmap_destroy(s_bitmap_icon7);
   gbitmap_destroy(s_bitmap_icon8);
 
   // Destory icons layer
@@ -605,6 +567,7 @@ static void init() {
     .unload = main_window_unload
   });
 
+  
   // Listen for seconds
   //tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
 
@@ -618,6 +581,14 @@ static void init() {
 
   // Listen for button events
   window_set_click_config_provider(s_main_window, click_config_provider);
+
+  time_units = SECOND_UNIT; //TODO check persistant storage for value
+
+  // Make sure the time is displayed from the start
+  update_time();
+
+  // Register with TickTimerService
+  tick_timer_service_subscribe(time_units, tick_handler); 
 }
 
 static void requestStateFromServer()
@@ -655,6 +626,8 @@ static void requestStateFromServer()
 
 static void deinit() {
   window_destroy(s_main_window);
+
+  tick_timer_service_unsubscribe();
 }
 
 int main(void) {
