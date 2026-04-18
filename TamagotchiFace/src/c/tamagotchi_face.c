@@ -32,6 +32,8 @@
 
 #include <pebble.h>
 
+const int USE_SECONDS_KEY = 32;
+
 static void requestStateFromServer();
 
 static Window *s_main_window;
@@ -515,21 +517,19 @@ static void DrawArrows(bool (*screen)[LCD_WIDTH], int seconds)
   DrawBitmap(screen, (modSeconds > 4 && modSeconds < 10) ? arrow_full : arrow_empty, 3, 5, 29, 10);
 }
 
-static void update_time()
+static void update_time(bool (*screen)[LCD_WIDTH])
 {
   // clear screen used for time
   ClearScreen(s_time_on_big_screen);
 
   // draw :
-  //TODO add if statement and use correct screen buffer
-  SetPixel(s_screen_buffer, 12, 1, 1);
-  SetPixel(s_screen_buffer, 12, 5, 1);
+  SetPixel(screen, 12, 1, 1);
+  SetPixel(screen, 12, 5, 1);
 
   // Get a tm structure
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
-  //TODO add if statement for which screen to use
   // get correct hour for am or pm or 24h style
   int hour = 0;
   int minute = tick_time->tm_min;
@@ -541,16 +541,20 @@ static void update_time()
   else
   {
     hour = tick_time->tm_hour;
-    if (hour >= 13)
+    if hour >= 12)
     {
-      hour -= 12;
       // show pm
-      DrawBitmap(s_screen_buffer, pm, 6, 8, 3, 8);
+      DrawBitmap(screen, pm, 6, 8, 3, 8);
     }
     else
     {
       // show am
-      DrawBitmap(s_screen_buffer, am, 6, 8, 3, 8);
+      DrawBitmap(screen, am, 6, 8, 3, 8);
+    }
+
+    if (hour >= 13)
+    {
+      hour -= 12;
     }
   }
 
@@ -559,38 +563,45 @@ static void update_time()
   if (hour >= 10)
   {
     hour1 = hour/10;
-    DrawBigDigit(s_screen_buffer, hour1, 2, 0); // only draw first digit if there is one (no zero)
+    DrawBigDigit(screen, hour1, 2, 0); // only draw first digit if there is one (no zero)
   }
   // 2nd digit of the hour
-  DrawBigDigit(s_screen_buffer, hour - (hour1 * 10), 7, 0);
+  DrawBigDigit(screen, hour - (hour1 * 10), 7, 0);
   // 1st digit minute
   int minute1 = 0;
   if (minute >= 10)
   {
     minute1 = minute/10;
   } 
-  DrawBigDigit(s_screen_buffer, minute1, 14, 0);
+  DrawBigDigit(screen, minute1, 14, 0);
   // 2nd digit minute
-  DrawBigDigit(s_screen_buffer, minute - (minute1 * 10), 19, 0);
+  DrawBigDigit(screen, minute - (minute1 * 10), 19, 0);
   // 1st digit second //TODO only show seconds if doing seconds
   int second1 = 0;
   if (second >= 10)
   {
     second1 = second/10;
   }
-  DrawSmallDigit(s_screen_buffer, second1, 25, 2);
+  DrawSmallDigit(screen, second1, 25, 2);
   // 2nd digit second
-  DrawSmallDigit(s_screen_buffer, second - (second1 * 10), 29, 2);
+  DrawSmallDigit(screen, second - (second1 * 10), 29, 2);
 
   // arrows
-  DrawArrows(s_screen_buffer, second);
+  DrawArrows(screen, second); // handle if drawing seconds
 
   //TODO add if staztement if time on big screen and mark relevant layer dirty
   layer_mark_dirty(s_screen_layer); //Tell the system to redraw screen
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  update_time();
+  if (s_time_on_big_screen)
+  {
+    update_time(s_screen_buffer);
+  }
+  else
+  {
+    //TODO
+  }
 }
 
 static void main_window_load(Window *window) {
@@ -722,7 +733,7 @@ static void init() {
   time_units = SECOND_UNIT; //TODO check persistant storage for value
 
   // Make sure the time is displayed from the start
-  update_time();
+  update_time(s_screen_buffer); //TODO determine which screen
 
   // Register with TickTimerService
   tick_timer_service_subscribe(time_units, tick_handler); 

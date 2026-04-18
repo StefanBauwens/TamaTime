@@ -19,6 +19,12 @@ module.exports = [
         "defaultValue": "Settings"
       },
       {
+        "type": "toggle",
+        "messageKey": "UseSeconds",
+        "label": "Use seconds",
+        "defaultValue": true
+      },
+      {
         "type": "text",
         "defaultValue": "Tamagotchi Server used by Tamagotchi Emulator 4 Pebble"
       },

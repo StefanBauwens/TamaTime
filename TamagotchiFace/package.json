@@ -21,7 +21,8 @@
             "STATEshowing_attention_icon",
             "APIServerUrl",
             "JSMessage",
-            "RequestState"
+            "RequestState",
+            "UseSeconds"
         ],
         "projectType": "native",
         "resources": {
