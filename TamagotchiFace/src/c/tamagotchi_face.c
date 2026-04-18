@@ -505,6 +505,16 @@ static void DrawSmallDigit(bool (*screen)[LCD_WIDTH], int digit, uint8_t start_x
   }
 }
 
+static void DrawArrows(bool (*screen)[LCD_WIDTH], int seconds)
+{
+  int modSeconds = seconds%10;
+  DrawBitmap(screen, (modSeconds > 0 && modSeconds < 6) ? arrow_full : arrow_empty, 3, 5, 17, 10);
+  DrawBitmap(screen, (modSeconds > 1 && modSeconds < 7) ? arrow_full : arrow_empty, 3, 5, 20, 10);
+  DrawBitmap(screen, (modSeconds > 2 && modSeconds < 8) ? arrow_full : arrow_empty, 3, 5, 23, 10);
+  DrawBitmap(screen, (modSeconds > 3 && modSeconds < 9) ? arrow_full : arrow_empty, 3, 5, 26, 10);
+  DrawBitmap(screen, (modSeconds > 4 && modSeconds < 10) ? arrow_full : arrow_empty, 3, 5, 29, 10);
+}
+
 static void update_time()
 {
   // clear screen used for time
@@ -572,18 +582,8 @@ static void update_time()
   // 2nd digit second
   DrawSmallDigit(s_screen_buffer, second - (second1 * 10), 29, 2);
 
-  // arrows //TODO don't draw if no seconds? or just keep it fixed
-  DrawBitmap(s_screen_buffer, arrow_full, 3, 5, 17, 10);
-  DrawBitmap(s_screen_buffer, arrow_empty, 3, 5, 20, 10);
-  DrawBitmap(s_screen_buffer, arrow_empty, 3, 5, 23, 10);
-  DrawBitmap(s_screen_buffer, arrow_empty, 3, 5, 26, 10);
-  DrawBitmap(s_screen_buffer, arrow_empty, 3, 5, 29, 10);
-
-
-
-  // Write the current hours and minutes into a buffer
-  //static char s_time_buffer[8];
-  //strftime(s_time_buffer, sizeof(s_time_buffer), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
+  // arrows
+  DrawArrows(s_screen_buffer, second);
 
   //TODO add if staztement if time on big screen and mark relevant layer dirty
   layer_mark_dirty(s_screen_layer); //Tell the system to redraw screen
