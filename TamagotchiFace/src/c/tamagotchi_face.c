@@ -36,7 +36,7 @@ static void requestStateFromServer();
 
 static Window *s_main_window;
 static BitmapLayer *s_background_layer;
-static Layer *s_screen_layer;
+static Layer *s_screen_layer; //TODO make another layer for small screen!!
 static Layer *s_icons_layer;
 static TextLayer *s_text_layer; //TODO use as temp show the time? DO NOT use fonts for tellling time since pixels change depending on platform
 //static GFont s_lcd_font;
@@ -269,8 +269,10 @@ uint8_t memory[MEM_BUFFER_SIZE];
 static bool s_showingAttentionIcon = false;
 static bool s_js_ready;
 static bool s_pixelsChanged = false;
+static bool s_time_on_big_screen = true; //TODO set this via config
 
 static bool s_screen_buffer[LCD_HEIGHT][LCD_WIDTH] = {{0}};
+static bool s_small_screen_buffer[LCD_HEIGHT][LCD_WIDTH] = {{0}};
 
 static void Quit()
 {
@@ -283,6 +285,22 @@ static void Message(const char * text) // Write message to screen
     text_layer_set_text(s_text_layer, text);
 }
 
+static void SetPixel(bool (*screen)[LCD_WIDTH], uint8_t x, uint8_t y, bool value)
+{
+  screen[y][x] = value;
+}
+
+static void ClearScreen(bool big_screen)
+{
+  if (big_screen)
+  {
+    memset(s_screen_buffer, 0, sizeof(s_screen_buffer));
+  }
+  else
+  {
+    memset(s_small_screen_buffer, 0, sizeof(s_small_screen_buffer));
+  }
+}
 
 void set_screen_to_last_state(uint8_t *fullRam) { // gets screen data from memory and sets it to the screen
     uint8_t vram[VRAM_SIZE];
@@ -328,7 +346,7 @@ void set_screen_to_last_state(uint8_t *fullRam) { // gets screen data from memor
 
             int y = baseY + bitIndex;
 
-            s_screen_buffer[y][x] = bit;
+            SetPixel(s_screen_buffer, x, y, bit);
         }
     }
 
@@ -368,8 +386,8 @@ static void icons_update_proc(Layer *layer, GContext *ctx) {
   }
 }
 
-// Handles drawing screen layer
-static void screen_update_proc(Layer *layer, GContext *ctx) { 
+// Handles drawing big screen layer
+static void screen_update_proc(Layer *layer, GContext *ctx) { //TODO duplicat logic for small screen
   // draw new screen
   graphics_context_set_fill_color(ctx, GColorBlack);
 
@@ -428,28 +446,82 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     layer_mark_dirty(s_screen_layer); //Tell the system to redraw screen
 
     //handle icons
-    //s_selectedIcon = STATEselected_icon_t->value->int8;
     s_showingAttentionIcon = STATEshowing_attention_icon_t->value->int8;
 
     layer_mark_dirty(s_icons_layer);
   }
 }
 
+static void DrawBitmap(bool (*screen)[LCD_WIDTH],
+                       const uint8_t *bitmap,
+                       uint8_t width,
+                       uint8_t height,
+                       uint8_t start_x,
+                       uint8_t start_y)
+{
+    for (uint8_t y = 0; y < height; y++) {
+        uint8_t row = bitmap[y];
+
+        for (uint8_t x = 0; x < width; x++) {
+            // Extract bit (MSB on the left)
+            bool pixel = (row >> (width - 1 - x)) & 0x01;
+
+            SetPixel(screen, start_x + x, start_y + y, pixel);
+        }
+    }
+}
+
 static void update_time()
 {
-  //TODO
+  // clear screen used for time
+  ClearScreen(s_time_on_big_screen);
+
+  // draw :
+  //TODO add if statement and use correct screen buffer
+  SetPixel(s_screen_buffer, 12, 1, 1);
+  SetPixel(s_screen_buffer, 12, 5, 1);
 
   // Get a tm structure
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
-  // Write the current hours and minutes into a buffer
-  static char s_time_buffer[8];
-  strftime(s_time_buffer, sizeof(s_time_buffer), clock_is_24h_style() ?
-                                                    "%H:%M" : "%I:%M", tick_time);
+  //TODO add if statement for which screen to use
+  // time
+  DrawBitmap(s_screen_buffer, big_1, 4, 7, 2, 0); // hour position 1 //TODO handle hour correctly! take 24h into account
+  DrawBitmap(s_screen_buffer, big_5, 4, 7, 7, 0); // hour position 2
+  DrawBitmap(s_screen_buffer, big_3, 4, 7, 14, 0); // minute position 1
+  DrawBitmap(s_screen_buffer, big_6, 4, 7, 19, 0); // minute position 2
+  DrawBitmap(s_screen_buffer, small_0, 3, 5, 25, 2); // second position 1
+  DrawBitmap(s_screen_buffer, small_5, 3, 5, 29, 2); // second position 2
 
-  // Display this time on the TextLayer
-  //text_layer_set_text(s_time_layer, s_time_buffer);
+  // am/pm 
+  if (!clock_is_24h_style())
+  {
+    if (tick_time->tm_hour >= 13)
+    {
+      DrawBitmap(s_screen_buffer, pm, 6, 8, 3, 8);
+    }
+    else
+    {
+      DrawBitmap(s_screen_buffer, am, 6, 8, 3, 8);
+    }
+  }
+
+  // arrows //TODO don't draw if no seconds? or just keep it fixed
+  DrawBitmap(s_screen_buffer, arrow_full, 3, 5, 17, 10);
+  DrawBitmap(s_screen_buffer, arrow_empty, 3, 5, 20, 10);
+  DrawBitmap(s_screen_buffer, arrow_empty, 3, 5, 23, 10);
+  DrawBitmap(s_screen_buffer, arrow_empty, 3, 5, 26, 10);
+  DrawBitmap(s_screen_buffer, arrow_empty, 3, 5, 29, 10);
+
+
+
+  // Write the current hours and minutes into a buffer
+  //static char s_time_buffer[8];
+  //strftime(s_time_buffer, sizeof(s_time_buffer), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
+
+  //TODO add if staztement if time on big screen and mark relevant layer dirty
+  layer_mark_dirty(s_screen_layer); //Tell the system to redraw screen
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
