@@ -482,10 +482,11 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
       hasServerUrl = !is_empty_or_whitespace(url);
       if (!hasServerUrl)
       {
-        s_time_on_big_screen = true;
-        ClearScreen(false);
-        layer_mark_dirty(s_small_screen_layer);
-        update_time(s_screen_buffer);
+        //TODO test
+        //s_time_on_big_screen = true;
+        //ClearScreen(false);
+        //layer_mark_dirty(s_small_screen_layer);
+        //update_time(s_screen_buffer);
         skip = true;
       }
     }
@@ -515,7 +516,6 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   }
 
   Tuple *APIServerUrl_t = dict_find(iter, MESSAGE_KEY_APIServerUrl);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "here"); //TODO remove
   if (APIServerUrl_t)
   {
     const char *url = APIServerUrl_t->value->cstring;
@@ -532,16 +532,16 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
       ClearScreen(false);
       layer_mark_dirty(s_small_screen_layer);
       update_time(s_screen_buffer);
+
+      // hide attention icon
+      s_showingAttentionIcon = false;
+      layer_mark_dirty(s_icons_layer);
     }
     else
     {
       bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg_screen);
       requestStateFromServer();
     }
-  }
-  else
-  {
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "no api server url incoming"); //TODO remove
   }
 
   // Handle (error) messages //TODO probably wanna remove?
