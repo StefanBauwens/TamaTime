@@ -432,7 +432,7 @@ static void small_screen_update_proc(Layer *layer, GContext *ctx) {
       if (s_small_screen_buffer[h][w])
       {
         #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
-        graphics_fill_rect(ctx, GRect(w * 2, h * 2, 2, 2), 0, GCornerNone);
+        graphics_fill_rect(ctx, GRect(w * 3, h * 3, 3, 3), 0, GCornerNone);
         #else
         graphics_fill_rect(ctx, GRect(w * 2, h * 2, 2, 2), 0, GCornerNone);
         #endif
@@ -846,11 +846,11 @@ static void main_window_load(Window *window) {
 
   // Create small screen Layer
 #if defined(PBL_PLATFORM_CHALK)
-    s_small_screen_layer = layer_create(GRect(58, 14, 64, 32)); //TODO
+    s_small_screen_layer = layer_create(GRect(58, 14, 64, 32));
 #elif defined(PBL_PLATFORM_GABBRO)
-  s_small_screen_layer = layer_create(GRect(50, 92, 64, 32)); //TODO
+  s_small_screen_layer = layer_create(GRect(82, 32, 96, 48));
 #elif defined(PBL_PLATFORM_EMERY)
-  s_small_screen_layer = layer_create(GRect(20, 76, 64, 32)); //TODO
+  s_small_screen_layer = layer_create(GRect(52, 16, 96, 48));
 #else
   s_small_screen_layer = layer_create(GRect(40, 8, 64, 32));
 #endif
