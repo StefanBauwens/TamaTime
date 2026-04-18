@@ -105,8 +105,7 @@ Pebble.addEventListener('ready',
         // Update s_js_ready on watch
         Pebble.sendAppMessage({'JSReady': 1});
 
-        FetchScreenInfoAndSendToWatch(); //TODO only do it and set interval if the url has been set!
-        // Send every minute update to watch, so watch doesn't need to request
+        FetchScreenInfoAndSendToWatch(); // run on start
     }   
 );
 

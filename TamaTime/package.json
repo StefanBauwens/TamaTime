@@ -9,9 +9,9 @@
         "tamagotchi",
         "pet"
     ],
-    "name": "Tamagotchi Face",
+    "name": "TamaTime",
     "pebble": {
-        "displayName": "Tamagotchi Face",
+        "displayName": "TamaTime",
         "enableMultiJS": true,
         "messageKeys": [
             "Button",
