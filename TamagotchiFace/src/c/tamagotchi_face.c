@@ -281,6 +281,8 @@ static bool s_time_on_big_screen = true; //TODO set this via config
 static bool s_screen_buffer[LCD_HEIGHT][LCD_WIDTH] = {{0}};
 static bool s_small_screen_buffer[LCD_HEIGHT][LCD_WIDTH] = {{0}};
 
+static int s_prev_minute = -1;
+
 static void Quit()
 {
   window_stack_pop_all(false);
@@ -595,6 +597,12 @@ static void update_time(bool (*screen)[LCD_WIDTH])
   int hour = 0;
   int minute = tick_time->tm_min;
   int second = tick_time->tm_sec;
+
+  if (minute != s_prev_minute) // fetch screen every minute
+  {
+    requestStateFromServer();
+  }
+
   if (clock_is_24h_style())
   {
     hour = tick_time->tm_hour;
@@ -670,6 +678,8 @@ static void update_time(bool (*screen)[LCD_WIDTH])
       DrawArrows(screen, 5);
     }
   }
+
+  s_prev_minute = minute;
 
   // redraw time screen
   layer_mark_dirty(s_time_on_big_screen ? s_screen_layer : s_small_screen_layer); 

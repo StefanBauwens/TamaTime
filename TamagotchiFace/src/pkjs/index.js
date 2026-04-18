@@ -107,9 +107,6 @@ Pebble.addEventListener('ready',
 
         FetchScreenInfoAndSendToWatch(); //TODO only do it and set interval if the url has been set!
         // Send every minute update to watch, so watch doesn't need to request
-        setInterval(() => {
-            FetchScreenInfoAndSendToWatch(); //TODO TODO
-        }, 60000);
     }   
 );
 
