@@ -1,18 +1,7 @@
 //TODO
-// handle buzzing on attention icon set -> show for 5 minutes? well actually if the attention icon is showing it will show every minute until its gone?
-// do NOT buzz every time if the attention icon is still showing, but good to keep pushing screen as there might be multiple things needing attention?
-// handle error handling -> only when server doesn't work? -> clear screen nicely? 
-// write simple readme, Te4p needs to run first before any valid state to fetch from server
-// publish to store
-// make reddit post with screenshots and more explanation of emulator as well.
-// Link to original pebble app in configuration?
-// Make small version and option to flip displays
+// publish to store + make reddit post with screenshots and more explanation of emulator as well.
 // server url should be optional (hide small screen)
-// update every minute? check for attention? i guess once a minute app message isn't very harmful to battery
-// Tamatime/ Tamaception
-// set interval js side, only do if server url is set and not empty TODO change this!
-// error handling
-
+// handle every pebble screen + hide small screen if no url
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 
@@ -25,13 +14,28 @@
 #define LCD_HEIGHT 16
 
 #include <pebble.h>
+#include <ctype.h>
 
 const int USE_SECONDS_KEY = 32;
 const int TIME_ON_BIG_SCREEN_KEY = 33;
+const int API_URL_KEY = 34;
 
 static void requestStateFromServer();
 static void update_time(bool (*screen)[LCD_WIDTH]);
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
+
+static bool is_empty_or_whitespace(const char *str)
+{
+    if (str == NULL) return true;
+
+    while (*str) {
+        if (!isspace((unsigned char)*str)) {
+            return false; // found a non-space character
+        }
+        str++;
+    }
+    return true;
+}
 
 static Window *s_main_window;
 static BitmapLayer *s_background_layer;
@@ -271,6 +275,7 @@ const uint8_t pm[] = {
 
 // Bitmaps
 static GBitmap *s_bitmap_bg;
+static GBitmap *s_bitmap_bg_screen;
 static GBitmap *s_bitmap_icon8;
 
 uint8_t memory[MEM_BUFFER_SIZE];
@@ -468,27 +473,76 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   Tuple *SwapScreens_t = dict_find(iter, MESSAGE_KEY_SwapScreens);
   if (SwapScreens_t)
   {
-    bool s_time_was_on_big_screen = s_time_on_big_screen;
-    s_time_on_big_screen = !(SwapScreens_t->value->int8);
-    persist_write_bool(TIME_ON_BIG_SCREEN_KEY, s_time_on_big_screen);
-    
-    if (s_time_on_big_screen != s_time_was_on_big_screen) // change happened
+    bool hasServerUrl = false;
+    bool skip = false;
+    if (persist_exists(API_URL_KEY))
     {
-      // copy tama screen to time screen
-      if (s_time_was_on_big_screen) // copy from small to big
+      char url[128];
+      persist_read_string(API_URL_KEY, url, sizeof(url));
+      hasServerUrl = !is_empty_or_whitespace(url);
+      if (!hasServerUrl)
       {
-        memcpy(s_screen_buffer, s_small_screen_buffer, sizeof(s_screen_buffer));
+        s_time_on_big_screen = true;
+        ClearScreen(false);
+        layer_mark_dirty(s_small_screen_layer);
+        update_time(s_screen_buffer);
+        skip = true;
       }
-      else // copy from big to small
-      {
-        memcpy(s_small_screen_buffer, s_screen_buffer, sizeof(s_small_screen_buffer));
-      }
+    }
+    
+    if (!skip)
+    {
+      bool s_time_was_on_big_screen = s_time_on_big_screen;
+      s_time_on_big_screen = !(SwapScreens_t->value->int8);
+      persist_write_bool(TIME_ON_BIG_SCREEN_KEY, s_time_on_big_screen);
       
-      layer_mark_dirty(s_time_on_big_screen ? s_small_screen_layer : s_screen_layer); 
-      update_time(s_time_on_big_screen ? s_screen_buffer : s_small_screen_buffer);
+      if (s_time_on_big_screen != s_time_was_on_big_screen) // change happened
+      {
+        // copy tama screen to time screen
+        if (s_time_was_on_big_screen) // copy from small to big
+        {
+          memcpy(s_screen_buffer, s_small_screen_buffer, sizeof(s_screen_buffer));
+        }
+        else // copy from big to small
+        {
+          memcpy(s_small_screen_buffer, s_screen_buffer, sizeof(s_small_screen_buffer));
+        }
+        
+        layer_mark_dirty(s_time_on_big_screen ? s_small_screen_layer : s_screen_layer); 
+        update_time(s_time_on_big_screen ? s_screen_buffer : s_small_screen_buffer);
+      }
     }
   }
-  
+
+  Tuple *APIServerUrl_t = dict_find(iter, MESSAGE_KEY_APIServerUrl);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "here"); //TODO remove
+  if (APIServerUrl_t)
+  {
+    const char *url = APIServerUrl_t->value->cstring;
+    persist_write_string(API_URL_KEY, url);
+
+    bool hasServerUrl = !is_empty_or_whitespace(url);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "hasServerUrl2: %d", (int)hasServerUrl);
+
+    if (is_empty_or_whitespace(url))
+    {
+      bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg);
+      s_time_on_big_screen = true;
+      // clear small screen
+      ClearScreen(false);
+      layer_mark_dirty(s_small_screen_layer);
+      update_time(s_screen_buffer);
+    }
+    else
+    {
+      bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg_screen);
+      requestStateFromServer();
+    }
+  }
+  else
+  {
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "no api server url incoming"); //TODO remove
+  }
 
   // Handle (error) messages //TODO probably wanna remove?
   Tuple *JSMessage_t = dict_find(iter, MESSAGE_KEY_JSMessage);
@@ -518,7 +572,8 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     // vibrate if going from no attention icon to attention icon
     if (!wasShowingAttentionIcon && s_showingAttentionIcon)
     {
-      vibes_double_pulse();
+      vibes_long_pulse();
+      //vibes_double_pulse();
     }
 
     layer_mark_dirty(s_icons_layer);
@@ -606,9 +661,19 @@ static void update_time(bool (*screen)[LCD_WIDTH])
   int minute = tick_time->tm_min;
   int second = tick_time->tm_sec;
 
-  if (minute != s_prev_minute) // fetch screen every minute
+  if (minute != s_prev_minute) // fetch screen every minute if url is not empty
   {
-    requestStateFromServer();
+    bool hasServerUrl = false;
+    if (persist_exists(API_URL_KEY))
+    {
+      char url[128];
+      persist_read_string(API_URL_KEY, url, sizeof(url));
+      hasServerUrl = !is_empty_or_whitespace(url);
+      if (hasServerUrl)
+      {
+        requestStateFromServer();
+      }
+    }
   }
 
   if (clock_is_24h_style())
@@ -703,9 +768,11 @@ static void main_window_load(Window *window) {
 
   // Create GBitmap for background 
 #if defined(PBL_COLOR)
-  s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE);
+  s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE); 
+  //TODO with screen todo
 #else
   s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW);
+  s_bitmap_bg_screen = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW_SCREEN);
 #endif
 
   // Create background layer
@@ -719,7 +786,27 @@ static void main_window_load(Window *window) {
   s_background_layer = bitmap_layer_create(GRect(0, 0, 144, 168));
 #endif
   bitmap_layer_set_compositing_mode(s_background_layer, GCompOpSet);
-  bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg);
+
+  // set the bg bitmap
+  bool hasServerUrl = false;
+  if (persist_exists(API_URL_KEY))
+  {
+    char url[128];
+    persist_read_string(API_URL_KEY, url, sizeof(url));
+
+    hasServerUrl = !is_empty_or_whitespace(url);
+  }
+
+  APP_LOG(APP_LOG_LEVEL_ERROR, "hasServerUrl: %d", (int)hasServerUrl);
+
+  if (hasServerUrl)
+  {
+    bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg_screen);
+  }
+  else
+  {
+    bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg);
+  }
 
   // Add it as a child layer to the Window's root layer
   layer_add_child(window_layer, bitmap_layer_get_layer(s_background_layer));
@@ -795,6 +882,7 @@ static void main_window_load(Window *window) {
 static void main_window_unload(Window *window) {
   // Destroy backrgound bitmap and its layer
   gbitmap_destroy(s_bitmap_bg);
+  gbitmap_destroy(s_bitmap_bg_screen);
   bitmap_layer_destroy(s_background_layer);
 
   // Destroy text layer

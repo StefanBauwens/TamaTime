@@ -10,7 +10,7 @@ var Clay = require('@rebble/clay');
 // Load our Clay configuration file
 var clayConfig = require('./config');
 // Initialize Clay
-var clay = new Clay(clayConfig, null, {autoHandleEvents: true});
+var clay = new Clay(clayConfig, null, {autoHandleEvents: false});
 
 var xhrRequest = function (url, type, data, callback, errorCallback, timeout = 10000) {
   var xhr = new XMLHttpRequest();
@@ -52,6 +52,7 @@ var xhrRequest = function (url, type, data, callback, errorCallback, timeout = 1
 
 function FetchScreenInfoAndSendToWatch() // Send last save state back to watch
 {
+    console.log("apii serever: " + localStorage.getItem(APISERVER_KEY));
     if(localStorage.getItem(APISERVER_KEY) !== null && localStorage.getItem(APISERVER_KEY).trim().length !== 0)
     {
         //Pebble.sendAppMessage({'JSMessage': "Trying to sync with server..."});
@@ -64,7 +65,7 @@ function FetchScreenInfoAndSendToWatch() // Send last save state back to watch
 
             if(serverState.memory[0] === null)
             {
-                console.log("Empty state received. No need to show anything to user");
+                console.log("Empty state received. No need to show anything to user. Did you already use Tamagotchi Emulator 4 Pebble with this server?");
                 //Pebble.sendAppMessage({'JSMessage': "Empty state received. Restoring from local storage..."});
                 return;
             }
@@ -124,7 +125,6 @@ Pebble.addEventListener('appmessage', function(e) {
     }*/
   });
 
-/*
 // We need to implement this since we are overriding events in webviewclosed
 Pebble.addEventListener('showConfiguration', 
     function(e) {
@@ -140,7 +140,11 @@ Pebble.addEventListener('webviewclosed',
     
         var dict = clay.getSettings(e.response);
 
+        //var dictToSend = {'APIServerURL': dict[messageKeys.APIServerUrl], 'UseSeconds': dict[messageKeys.UseSeconds], 'SwapScreens': dict[messageKeys.SwapScreens]};
+        //console.log("Dict: " + JSON.stringify(dictToSend));
+        SendDictRetrying(dict);
+        
+
         localStorage.setItem(APISERVER_KEY, dict[messageKeys.APIServerUrl]);
     }
 );
-*/

@@ -72,6 +72,11 @@
                     "type": "bitmap"
                 },
                 {
+                    "file": "images/bgNoColor_withScreen.png",
+                    "name": "BG_IMAGE_BW_SCREEN",
+                    "type": "bitmap"
+                },
+                {
                     "file": "images/1.png",
                     "name": "ICON1",
                     "type": "bitmap",
