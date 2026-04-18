@@ -105,7 +105,11 @@ Pebble.addEventListener('ready',
         // Update s_js_ready on watch
         Pebble.sendAppMessage({'JSReady': 1});
 
-        //TODO use setinterval? to get every minute? Let pebble ask for it, more reliable
+        FetchScreenInfoAndSendToWatch(); //TODO only do it and set interval if the url has been set!
+        // Send every minute update to watch, so watch doesn't need to request
+        setInterval(() => {
+            FetchScreenInfoAndSendToWatch(); //TODO TODO
+        }, 60000);
     }   
 );
 

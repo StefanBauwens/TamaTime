@@ -1,10 +1,4 @@
 //TODO
-// make time work with seconds and minutes
-// make config for using seconds or not
-// handle 05:00 (should not show the first 0)
-// handle the empty and full arrows
-// handle am and pm (make it work correctly)
-// handle NOT using am and pm (24 hour format)
 // handle frequency we should poll server (once a minute?) -> maybe don't config it? -> js check periodically and if attention icon is set just send it only then
 // handle buzzing on attention icon set -> show for 5 minutes? well actually if the attention icon is showing it will show every minute until its gone?
 // do NOT buzz every time if the attention icon is still showing, but good to keep pushing screen as there might be multiple things needing attention?
@@ -14,10 +8,10 @@
 // make reddit post with screenshots and more explanation of emulator as well.
 // Link to original pebble app in configuration?
 // Make small version and option to flip displays
-// ignore regular icons, no need to show that
 // server url should be optional (hide small screen)
 // update every minute? check for attention? i guess once a minute app message isn't very harmful to battery
 // Tamatime/ Tamaception
+// set interval js side, only do if server url is set and not empty
 
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
@@ -40,9 +34,10 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed);
 
 static Window *s_main_window;
 static BitmapLayer *s_background_layer;
-static Layer *s_screen_layer; //TODO make another layer for small screen!!
+static Layer *s_screen_layer; 
+static Layer *s_small_screen_layer; //TODO make another layer for small screen!!
 static Layer *s_icons_layer;
-static TextLayer *s_text_layer; //TODO use as temp show the time? DO NOT use fonts for tellling time since pixels change depending on platform
+static TextLayer *s_text_layer; // unused?
 //static GFont s_lcd_font;
 static TimeUnits time_units; // use seconds or not
 
@@ -280,7 +275,6 @@ static GBitmap *s_bitmap_icon8;
 uint8_t memory[MEM_BUFFER_SIZE];
 static bool s_showingAttentionIcon = false;
 static bool s_js_ready;
-static bool s_pixelsChanged = false;
 static bool s_time_on_big_screen = true; //TODO set this via config
 
 static bool s_screen_buffer[LCD_HEIGHT][LCD_WIDTH] = {{0}};
@@ -354,15 +348,13 @@ void set_screen_to_last_state(uint8_t *fullRam) { // gets screen data from memor
 
         for (int bitIndex = 0; bitIndex < BITS_PER_BYTE; bitIndex++) {
           int bit = (byte >> bitIndex) & 1;  
-          //int bit = (byte >> (7 - bitIndex)) & 1;
+          int y = baseY + bitIndex;
 
-            int y = baseY + bitIndex;
-
-            SetPixel(s_screen_buffer, x, y, bit);
+          SetPixel(s_time_on_big_screen ? s_small_screen_buffer : s_screen_buffer, x, y, bit);
         }
     }
 
-    s_pixelsChanged = true;
+    layer_mark_dirty(s_time_on_big_screen ? s_small_screen_layer : s_screen_layer);
 
     #undef COPY_RANGE
     #undef COPY_RANGE_REVERSE
@@ -374,8 +366,7 @@ void set_screen_to_last_state(uint8_t *fullRam) { // gets screen data from memor
   requestStateFromServer();
 }*/
 
-static void click_config_provider(void *context) { //TODO use a button to click to see the time or change view? though can be annoying
-  // subscribe to button presses here  
+static void click_config_provider(void *context) { // unused
   //window_single_click_subscribe(BUTTON_ID_BACK, on_button_back);
 }
 
@@ -399,7 +390,7 @@ static void icons_update_proc(Layer *layer, GContext *ctx) {
 }
 
 // Handles drawing big screen layer
-static void screen_update_proc(Layer *layer, GContext *ctx) { //TODO duplicat logic for small screen
+static void screen_update_proc(Layer *layer, GContext *ctx) {
   // draw new screen
   graphics_context_set_fill_color(ctx, GColorBlack);
 
@@ -414,6 +405,28 @@ static void screen_update_proc(Layer *layer, GContext *ctx) { //TODO duplicat lo
         graphics_fill_rect(ctx, GRect(w * 5, h * 5, 4, 4), 0, GCornerNone);
         #else
         graphics_fill_rect(ctx, GRect(w * 4, h * 4, 3, 3), 0, GCornerNone);
+        #endif
+      }
+    }
+  }
+}
+
+// Handles drawing small screen layer
+static void small_screen_update_proc(Layer *layer, GContext *ctx) {
+  // draw new screen
+  graphics_context_set_fill_color(ctx, GColorBlack);
+
+  //draw pixels
+  for (size_t h = 0; h < LCD_HEIGHT; h++)
+  {
+    for (size_t w = 0; w < LCD_WIDTH; w++)
+    {
+      if (s_small_screen_buffer[h][w])
+      {
+        #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
+        graphics_fill_rect(ctx, GRect(w * 2, h * 2, 2, 2), 0, GCornerNone);
+        #else
+        graphics_fill_rect(ctx, GRect(w * 2, h * 2, 2, 2), 0, GCornerNone);
         #endif
       }
     }
@@ -435,7 +448,7 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   Tuple *UseSeconds_t = dict_find(iter, MESSAGE_KEY_UseSeconds);
   if (UseSeconds_t)
   {
-    bool useSeconds = UseSeconds_t->value->int8; //TODO test
+    bool useSeconds = UseSeconds_t->value->int8;
     persist_write_bool(USE_SECONDS_KEY, useSeconds);
 
     time_units = useSeconds ? SECOND_UNIT : MINUTE_UNIT;
@@ -443,8 +456,15 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     tick_timer_service_unsubscribe();
 
     // Make sure the time is displayed from the start
-    update_time(s_screen_buffer); //TODO determine which screen
-
+    if (s_time_on_big_screen)
+    {
+      update_time(s_screen_buffer);
+    }
+    else
+    {
+      update_time(s_small_screen_buffer);
+    }
+    
     // Register with TickTimerService
     tick_timer_service_subscribe(time_units, tick_handler); 
   }
@@ -458,24 +478,20 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   }
 
   // Handle incoming save state
-  Tuple *STATEnone_t = dict_find(iter, MESSAGE_KEY_STATEnone); //TODO do we need?
   Tuple *STATEmemory_t = dict_find(iter, MESSAGE_KEY_STATEmemory);
   //Tuple *STATEselected_icon_t = dict_find(iter, MESSAGE_KEY_STATEselected_icon);
   Tuple *STATEshowing_attention_icon_t = dict_find(iter, MESSAGE_KEY_STATEshowing_attention_icon);
 
   if (STATEmemory_t && STATEshowing_attention_icon_t)
   {
-    //Message("Loading save state...");
     // handle screen
     uint8_t *state_memory = STATEmemory_t->value->data;
 
     memcpy(memory, state_memory, sizeof(memory));
     set_screen_to_last_state(memory); 
-    layer_mark_dirty(s_screen_layer); //Tell the system to redraw screen
 
-    //handle icons
+    // handle attention icon
     s_showingAttentionIcon = STATEshowing_attention_icon_t->value->int8;
-
     layer_mark_dirty(s_icons_layer);
   }
 }
@@ -636,8 +652,8 @@ static void update_time(bool (*screen)[LCD_WIDTH])
     }
   }
 
-  //TODO add if staztement if time on big screen and mark relevant layer dirty
-  layer_mark_dirty(s_screen_layer); //Tell the system to redraw screen
+  // redraw time screen
+  layer_mark_dirty(s_time_on_big_screen ? s_screen_layer : s_small_screen_layer); 
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -647,7 +663,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   }
   else
   {
-    //TODO
+    update_time(s_small_screen_buffer);
   }
 }
 
@@ -711,6 +727,21 @@ static void main_window_load(Window *window) {
   // Add to window  
   layer_add_child(window_layer, s_screen_layer);
 
+  // Create small screen Layer
+#if defined(PBL_PLATFORM_CHALK)
+    s_small_screen_layer = layer_create(GRect(8+18, 51+6, 32, 16)); //TODO
+#elif defined(PBL_PLATFORM_GABBRO)
+  s_small_screen_layer = layer_create(GRect(50, 92, 64, 32)); //TODO
+#elif defined(PBL_PLATFORM_EMERY)
+  s_small_screen_layer = layer_create(GRect(20, 76, 64, 32)); //TODO
+#else
+  s_small_screen_layer = layer_create(GRect(40, 8, 64, 32)); //TODO
+#endif
+  layer_set_update_proc(s_small_screen_layer, small_screen_update_proc);
+
+  // Add to window  
+  layer_add_child(window_layer, s_small_screen_layer);
+
   // Font
   //s_lcd_font    = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_SMALL_LCD_9));
 
@@ -750,6 +781,9 @@ static void main_window_unload(Window *window) {
 
   // Destroy screen layer
   layer_destroy(s_screen_layer);
+
+  // Destroy small screen layer
+  layer_destroy(s_small_screen_layer);
 }
 
 static void init() {
@@ -784,8 +818,10 @@ static void init() {
   }
   time_units = useSeconds ? SECOND_UNIT : MINUTE_UNIT;
 
+  //TODO set time on big screen from persistant storage
+
   // Make sure the time is displayed from the start
-  update_time(s_screen_buffer); //TODO determine which screen
+  update_time(s_time_on_big_screen ? s_screen_buffer : s_small_screen_buffer);
 
   // Register with TickTimerService
   tick_timer_service_subscribe(time_units, tick_handler); 
@@ -815,7 +851,6 @@ static void requestStateFromServer()
     else
     {
       APP_LOG(APP_LOG_LEVEL_DEBUG, "State request sent to phone!");
-      //TODO wait for response
     }
   } else {
     // The outbox cannot be used right now

@@ -26,7 +26,7 @@ module.exports = [
       },
       {
         "type": "text",
-        "defaultValue": "Tamagotchi Server used by Tamagotchi Emulator 4 Pebble"
+        "defaultValue": "(Optional) Tamagotchi Server used by Tamagotchi Emulator 4 Pebble. Leave blank if unused."
       },
       {
         "type": "input",
