@@ -101,12 +101,22 @@
                 {
                     "file": "images/bgNoColor.png",
                     "name": "BG_IMAGE_BW",
-                    "type": "bitmap"
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "diorite",
+                        "flint"
+                    ]
                 },
                 {
                     "file": "images/bgNoColor_withScreen.png",
                     "name": "BG_IMAGE_BW_SCREEN",
-                    "type": "bitmap"
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "aplite",
+                        "diorite",
+                        "flint"
+                    ]
                 },
                 {
                     "file": "images/1.png",
