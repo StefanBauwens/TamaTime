@@ -276,7 +276,7 @@ static GBitmap *s_bitmap_icon8;
 uint8_t memory[MEM_BUFFER_SIZE];
 static bool s_showingAttentionIcon = false;
 static bool s_js_ready;
-static bool s_time_on_big_screen = true; //TODO set this via config
+static bool s_time_on_big_screen = true; 
 
 static bool s_screen_buffer[LCD_HEIGHT][LCD_WIDTH] = {{0}};
 static bool s_small_screen_buffer[LCD_HEIGHT][LCD_WIDTH] = {{0}};
@@ -512,7 +512,15 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     set_screen_to_last_state(memory); 
 
     // handle attention icon
+    bool wasShowingAttentionIcon = s_showingAttentionIcon;
     s_showingAttentionIcon = STATEshowing_attention_icon_t->value->int8;
+    
+    // vibrate if going from no attention icon to attention icon
+    if (!wasShowingAttentionIcon && s_showingAttentionIcon)
+    {
+      vibes_double_pulse();
+    }
+
     layer_mark_dirty(s_icons_layer);
   }
 }
