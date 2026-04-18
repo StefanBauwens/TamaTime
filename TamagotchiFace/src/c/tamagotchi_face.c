@@ -227,6 +227,14 @@ const uint8_t small_9[] = {
   0b111,
 };
 
+const uint8_t arrow_empty_flip[] = {
+  0b001,
+  0b010,
+  0b100,
+  0b010,
+  0b001,
+};
+
 const uint8_t arrow_empty[] = {
   0b100,
   0b010,
@@ -614,7 +622,7 @@ static void update_time(bool (*screen)[LCD_WIDTH])
   {
     // show arrows instead of seconds to fill blank
     DrawBitmap(screen, arrow_empty, 3, 5, 25, 2);
-    DrawBitmap(screen, arrow_empty, 3, 5, 29, 2);
+    DrawBitmap(screen, arrow_empty_flip, 3, 5, 29, 2);
 
 
     // arrows
