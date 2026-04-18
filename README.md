@@ -2,6 +2,14 @@
 
 Created as a companion watchface for [Tamagotchi Emulator 4 Pebble](https://github.com/StefanBauwens/Tamagotchi-Emulator-Pebble) (TE4P)
 
+![Tamagotchi watchface screenshot basalt](Tamagotchi/screenshots/basalt.png)
+![Tamagotchi watchface screenshot basalt](Tamagotchi/screenshots/basalt2.png)
+![Tamagotchi watchface screenshot emery](Tamagotchi/screenshots/emery3.png)
+![Tamagotchi watchface screenshot gabbro](Tamagotchi/screenshots/gabbro2.png)
+![Tamagotchi watchface screenshot gabbro](Tamagotchi/screenshots/gabbro.png)
+![Tamagotchi watchface screenshot bw](Tamagotchi/screenshots/bw2.png)
+
+
 You can use it to check on your Tamagotchi without the need for the app to be on the foreground. As it also isn't doing any emulating it's much more lightweight and just fetches the data from your Tamagotchi-API server.
 
 TamaTime can work without a server URL, where it will just behave as any regular watchface.
