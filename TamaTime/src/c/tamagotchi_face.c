@@ -769,7 +769,7 @@ static void main_window_load(Window *window) {
   // Create GBitmap for background 
 #if defined(PBL_COLOR)
   s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE); 
-  //TODO with screen todo
+  s_bitmap_bg_screen = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_SCREEN);
 #else
   s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW);
   s_bitmap_bg_screen = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW_SCREEN);

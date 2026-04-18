@@ -43,8 +43,24 @@
                     ]
                 },
                 {
+                    "file": "images/bgBasalt_withScreen.png",
+                    "name": "BG_IMAGE_SCREEN",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "basalt"
+                    ]
+                },
+                {
                     "file": "images/bgGabbro.png",
                     "name": "BG_IMAGE",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "gabbro"
+                    ]
+                },
+                {
+                    "file": "images/bgGabbro.png",
+                    "name": "BG_IMAGE_SCREEN",
                     "type": "bitmap",
                     "targetPlatforms": [
                         "gabbro"
@@ -59,8 +75,24 @@
                     ]
                 },
                 {
+                    "file": "images/bgEmery.png",
+                    "name": "BG_IMAGE_SCREEN",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "emery"
+                    ]
+                },
+                {
                     "file": "images/bgChalk.png",
                     "name": "BG_IMAGE",
+                    "type": "bitmap",
+                    "targetPlatforms": [
+                        "chalk"
+                    ]
+                },
+                {
+                    "file": "images/bgChalk_withScreen.png",
+                    "name": "BG_IMAGE_SCREEN",
                     "type": "bitmap",
                     "targetPlatforms": [
                         "chalk"
