@@ -59,7 +59,7 @@
                     ]
                 },
                 {
-                    "file": "images/bgGabbro_withScreen.png",
+                    "file": "images/bgGabbro.png",
                     "name": "BG_IMAGE_SCREEN",
                     "type": "bitmap",
                     "targetPlatforms": [

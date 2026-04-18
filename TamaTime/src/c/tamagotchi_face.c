@@ -40,7 +40,7 @@ static bool is_empty_or_whitespace(const char *str)
 static Window *s_main_window;
 static BitmapLayer *s_background_layer;
 static Layer *s_screen_layer; 
-static Layer *s_small_screen_layer; //TODO make another layer for small screen!!
+static Layer *s_small_screen_layer;
 static Layer *s_icons_layer;
 static TextLayer *s_text_layer; // unused?
 //static GFont s_lcd_font;
@@ -275,7 +275,6 @@ const uint8_t pm[] = {
 
 // Bitmaps
 static GBitmap *s_bitmap_bg;
-static GBitmap *s_bitmap_bg_screen;
 static GBitmap *s_bitmap_icon8;
 
 uint8_t memory[MEM_BUFFER_SIZE];
@@ -526,7 +525,14 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
 
     if (is_empty_or_whitespace(url))
     {
+      gbitmap_destroy(s_bitmap_bg);
+      #if defined(PBL_COLOR)
+        s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE); 
+      #else
+        s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW);
+      #endif
       bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg);
+      
       s_time_on_big_screen = true;
       // clear small screen
       ClearScreen(false);
@@ -539,7 +545,13 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     }
     else
     {
-      bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg_screen);
+      gbitmap_destroy(s_bitmap_bg);
+      #if defined(PBL_COLOR)
+        s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_SCREEN); 
+      #else
+        s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW_SCREEN);
+      #endif
+      bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg);
       requestStateFromServer();
     }
   }
@@ -769,10 +781,8 @@ static void main_window_load(Window *window) {
   // Create GBitmap for background 
 #if defined(PBL_COLOR)
   s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE); 
-  s_bitmap_bg_screen = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_SCREEN);
 #else
   s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW);
-  s_bitmap_bg_screen = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW_SCREEN);
 #endif
 
   // Create background layer
@@ -793,20 +803,21 @@ static void main_window_load(Window *window) {
   {
     char url[128];
     persist_read_string(API_URL_KEY, url, sizeof(url));
-
     hasServerUrl = !is_empty_or_whitespace(url);
   }
 
-  APP_LOG(APP_LOG_LEVEL_ERROR, "hasServerUrl: %d", (int)hasServerUrl);
-
   if (hasServerUrl)
   {
-    bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg_screen);
+    gbitmap_destroy(s_bitmap_bg);
+
+    #if defined(PBL_COLOR)
+      s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_SCREEN); 
+    #else
+      s_bitmap_bg = gbitmap_create_with_resource(RESOURCE_ID_BG_IMAGE_BW_SCREEN);
+    #endif
   }
-  else
-  {
-    bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg);
-  }
+
+  bitmap_layer_set_bitmap(s_background_layer, s_bitmap_bg);
 
   // Add it as a child layer to the Window's root layer
   layer_add_child(window_layer, bitmap_layer_get_layer(s_background_layer));
@@ -882,7 +893,6 @@ static void main_window_load(Window *window) {
 static void main_window_unload(Window *window) {
   // Destroy backrgound bitmap and its layer
   gbitmap_destroy(s_bitmap_bg);
-  gbitmap_destroy(s_bitmap_bg_screen);
   bitmap_layer_destroy(s_background_layer);
 
   // Destroy text layer
