@@ -846,13 +846,13 @@ static void main_window_load(Window *window) {
 
   // Create small screen Layer
 #if defined(PBL_PLATFORM_CHALK)
-    s_small_screen_layer = layer_create(GRect(8+18, 51+6, 32, 16)); //TODO
+    s_small_screen_layer = layer_create(GRect(58, 14, 64, 32)); //TODO
 #elif defined(PBL_PLATFORM_GABBRO)
   s_small_screen_layer = layer_create(GRect(50, 92, 64, 32)); //TODO
 #elif defined(PBL_PLATFORM_EMERY)
   s_small_screen_layer = layer_create(GRect(20, 76, 64, 32)); //TODO
 #else
-  s_small_screen_layer = layer_create(GRect(40, 8, 64, 32)); //TODO
+  s_small_screen_layer = layer_create(GRect(40, 8, 64, 32));
 #endif
   layer_set_update_proc(s_small_screen_layer, small_screen_update_proc);
 
