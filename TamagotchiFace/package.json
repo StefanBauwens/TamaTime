@@ -22,7 +22,8 @@
             "APIServerUrl",
             "JSMessage",
             "RequestState",
-            "UseSeconds"
+            "UseSeconds",
+            "SwapScreens"
         ],
         "projectType": "native",
         "resources": {

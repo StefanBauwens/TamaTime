@@ -11,7 +11,7 @@
 // server url should be optional (hide small screen)
 // update every minute? check for attention? i guess once a minute app message isn't very harmful to battery
 // Tamatime/ Tamaception
-// set interval js side, only do if server url is set and not empty
+// set interval js side, only do if server url is set and not empty TODO change this!
 
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
@@ -27,6 +27,7 @@
 #include <pebble.h>
 
 const int USE_SECONDS_KEY = 32;
+const int TIME_ON_BIG_SCREEN_KEY = 33;
 
 static void requestStateFromServer();
 static void update_time(bool (*screen)[LCD_WIDTH]);
@@ -456,18 +457,36 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     tick_timer_service_unsubscribe();
 
     // Make sure the time is displayed from the start
-    if (s_time_on_big_screen)
-    {
-      update_time(s_screen_buffer);
-    }
-    else
-    {
-      update_time(s_small_screen_buffer);
-    }
+    update_time(s_time_on_big_screen ? s_screen_buffer : s_small_screen_buffer);
     
     // Register with TickTimerService
     tick_timer_service_subscribe(time_units, tick_handler); 
   }
+
+  Tuple *SwapScreens_t = dict_find(iter, MESSAGE_KEY_SwapScreens);
+  if (SwapScreens_t)
+  {
+    bool s_time_was_on_big_screen = s_time_on_big_screen;
+    s_time_on_big_screen = !(SwapScreens_t->value->int8);
+    persist_write_bool(TIME_ON_BIG_SCREEN_KEY, s_time_on_big_screen);
+    
+    if (s_time_on_big_screen != s_time_was_on_big_screen) // change happened
+    {
+      // copy tama screen to time screen
+      if (s_time_was_on_big_screen) // copy from small to big
+      {
+        memcpy(s_screen_buffer, s_small_screen_buffer, sizeof(s_screen_buffer));
+      }
+      else // copy from big to small
+      {
+        memcpy(s_small_screen_buffer, s_screen_buffer, sizeof(s_small_screen_buffer));
+      }
+      
+      layer_mark_dirty(s_time_on_big_screen ? s_small_screen_layer : s_screen_layer); 
+      update_time(s_time_on_big_screen ? s_screen_buffer : s_small_screen_buffer);
+    }
+  }
+  
 
   // Handle (error) messages //TODO probably wanna remove?
   Tuple *JSMessage_t = dict_find(iter, MESSAGE_KEY_JSMessage);
@@ -657,14 +676,7 @@ static void update_time(bool (*screen)[LCD_WIDTH])
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  if (s_time_on_big_screen)
-  {
-    update_time(s_screen_buffer);
-  }
-  else
-  {
-    update_time(s_small_screen_buffer);
-  }
+  update_time(s_time_on_big_screen ? s_screen_buffer : s_small_screen_buffer);
 }
 
 static void main_window_load(Window *window) {
@@ -795,7 +807,6 @@ static void init() {
     .load = main_window_load,
     .unload = main_window_unload
   });
-
   
   // Listen for seconds
   //tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
@@ -818,7 +829,11 @@ static void init() {
   }
   time_units = useSeconds ? SECOND_UNIT : MINUTE_UNIT;
 
-  //TODO set time on big screen from persistant storage
+  s_time_on_big_screen = true;
+  if (persist_exists(TIME_ON_BIG_SCREEN_KEY))
+  {
+    s_time_on_big_screen = persist_read_bool(TIME_ON_BIG_SCREEN_KEY);
+  }
 
   // Make sure the time is displayed from the start
   update_time(s_time_on_big_screen ? s_screen_buffer : s_small_screen_buffer);

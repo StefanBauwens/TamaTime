@@ -36,7 +36,13 @@ module.exports = [
         "attributes": {
           "placeholder": "e.g. http://192.168.0.100:5000"
         }
-      }
+      },
+      {
+        "type": "toggle",
+        "messageKey": "SwapScreens",
+        "label": "Swap screens",
+        "defaultValue": false
+      },
     ]
   },
   {
