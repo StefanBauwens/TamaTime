@@ -1,8 +1,3 @@
-//TODO
-// publish to store + make reddit post with screenshots and more explanation of emulator as well.
-// server url should be optional (hide small screen)
-// handle every pebble screen + hide small screen if no url
-
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 
 #define VRAM_SIZE (64 + 13)
