@@ -38,6 +38,13 @@ module.exports = [
         }
       },
       {
+        "type": "input",
+        "messageKey": "PebbleID",
+        "label": "x-pebble-id",
+        "defaultValue": "",
+        "description": "Needed if using Tamagotchi-API 1.2. or higher. Get this from the Tamagotchi Emulator app settings.",
+      },
+      {
         "type": "toggle",
         "messageKey": "SwapScreens",
         "label": "Swap screens",

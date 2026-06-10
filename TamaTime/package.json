@@ -23,7 +23,8 @@
             "JSMessage",
             "RequestState",
             "UseSeconds",
-            "SwapScreens"
+            "SwapScreens",
+            "PebbleID"
         ],
         "projectType": "native",
         "resources": {
@@ -306,5 +307,5 @@
             "configurable"
         ]
     },
-    "version": "1.0.0"
+    "version": "1.1.0"
 }

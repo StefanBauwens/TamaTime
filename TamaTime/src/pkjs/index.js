@@ -2,6 +2,7 @@ var messageKeys = require('message_keys');
 
 const LAST_STATE_KEY = "LAST_STATE";
 const APISERVER_KEY = "APISERVER";
+const PEBBLE_ID_KEY = "PEBBLE_ID";
 const ROMURL_KEY = "ROMURL";
 const SERVER_SAVE_FAILED_KEY = "SERVER_SAVE_FAILED";
 
@@ -41,6 +42,13 @@ var xhrRequest = function (url, type, data, callback, errorCallback, timeout = 1
 
   xhr.open(type, url);
 
+  // Send opaque watch identifier so the API can identify your tamagotchi. Needed if Api Server is v1.2 or higher
+  let pebbleID = localStorage.getItem(PEBBLE_ID_KEY);
+  if(pebbleID !== null && pebbleID.trim().length !== 0) {
+    xhr.setRequestHeader('x-pebble-id', pebbleID);
+    console.log("Pebble ID:" + pebbleID);
+  }
+
   // Set JSON header if sending data
   if (data) {
     xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
@@ -52,7 +60,7 @@ var xhrRequest = function (url, type, data, callback, errorCallback, timeout = 1
 
 function FetchScreenInfoAndSendToWatch() // Send last save state back to watch
 {
-    console.log("apii serever: " + localStorage.getItem(APISERVER_KEY));
+    console.log("api server: " + localStorage.getItem(APISERVER_KEY));
     if(localStorage.getItem(APISERVER_KEY) !== null && localStorage.getItem(APISERVER_KEY).trim().length !== 0)
     {
         //Pebble.sendAppMessage({'JSMessage': "Trying to sync with server..."});
@@ -144,7 +152,7 @@ Pebble.addEventListener('webviewclosed',
         //console.log("Dict: " + JSON.stringify(dictToSend));
         SendDictRetrying(dict);
         
-
         localStorage.setItem(APISERVER_KEY, dict[messageKeys.APIServerUrl]);
+        localStorage.setItem(PEBBLE_ID_KEY, dict[messageKeys.PebbleID]);
     }
 );
