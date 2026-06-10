@@ -19,3 +19,14 @@ However, if you want you can use a link to your server + port that hosts the [Ta
 Do note that this will only work if you've already saved a state from TE4P to that server. In other words, if you haven't yet used the Tamagotchi Emulator with your API server there will not yet be a valid state in the server to fetch.
 
 For more info check the readme there: https://github.com/StefanBauwens/Tamagotchi-Emulator-Pebble.
+
+# Version Info
+
+Version 1.1.
+
+- Added `x-pebble-id` field in Settings to allow to be compatible with Tamagotchi-API v1.2. and above.
+
+
+Version 1.0.
+
+- Initial version.

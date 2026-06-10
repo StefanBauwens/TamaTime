@@ -42,7 +42,7 @@ module.exports = [
         "messageKey": "PebbleID",
         "label": "x-pebble-id",
         "defaultValue": "",
-        "description": "Needed if using Tamagotchi-API 1.2. or higher. Get this from the Tamagotchi Emulator app settings.",
+        "description": "Needed if using Tamagotchi-API v1.2. and above. Get this from the Tamagotchi Emulator app settings.",
       },
       {
         "type": "toggle",
